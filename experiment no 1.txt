@@ -1,0 +1,29 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+entity bit4 is
+    Port (
+        a  : in  STD_LOGIC_VECTOR (3 downto 0);
+        b  : in  STD_LOGIC_VECTOR (3 downto 0);
+        op : in  STD_LOGIC_VECTOR (2 downto 0);
+        c  : out STD_LOGIC_VECTOR (4 downto 0)
+    );
+end bit4;
+architecture Behavioral of bit4 is
+begin
+    Process(a,b,Op)
+    Begin
+        Case op is
+            When "000" => 
+             c <= ('0' & a) + ('0' & b);
+            When "001" => c <= ('0' & a) - ('0' & b);
+            When "010" => c <= ('0' & a) AND ('0' & b);
+            When "011" => c <= ('0' & a) OR ('0' & b);
+            When "100" => c <= ('0' & a) XOR ('0' & b);
+            When "101" => c <= ('0' & a) NAND ('0' & b);
+            When "110" => c <= ('0' & a) XNOR ('0' & b);
+            When others => c <= '0' & (not a);
+        End case;
+    End process;
+end Behavioral;

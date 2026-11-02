@@ -1,0 +1,30 @@
+library IEEE; 
+use IEEE.STD_LOGIC_1164.ALL; 
+entity prr is Port 
+(clr : in STD_LOGIC; 
+ sel : in STD_LOGIC_VECTOR (1 downto 0);
+ shf_load : in STD_LOGIC; 
+ serial_in : in STD_LOGIC;
+clk : in STD_LOGIC; 
+d : in STD_LOGIC_VECTOR (3 downto 0); 
+q : inout STD_LOGIC_VECTOR (3 downto 0) );
+ end prr;
+ architecture Behavioral of prr is 
+ begin
+ process(clk, clr)
+ begin -- Asynchronous active-low clear
+ if clr = '0' then 
+ q <= "0000"; -- Positive clock edge 
+ elsif rising_edge(clk) then -- Parallel Load 
+ if shf_load = '0' then 
+ q <= d;
+ else
+ case sel is -- Shift Right 
+ when "00" => q <= serial_in & q(3 downto 1); -- Shift Left 
+ when "01" => q <= q(2 downto 0) & serial_in; -- Rotate Left
+ when "10" => q <= q(2 downto 0) & q(3); -- Rotate Right
+ when "11" => q <= q(0) & q(3 downto 1); 
+ when others => q <= q; end case; end if;
+ end if; 
+ end process; 
+ end Behavioral;
