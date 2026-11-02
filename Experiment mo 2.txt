@@ -1,0 +1,34 @@
+#define ledPin      13
+#define switchPin   8
+#define potPin      A0
+#define PWM_Output  10
+
+unsigned long lastPrint = 0;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  pinMode(switchPin, INPUT);
+  pinMode(PWM_Output, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  // 1. Digital read/write: button controls LED (pressed = HIGH -> LED OFF, as in manual)
+  int val = digitalRead(switchPin);
+  digitalWrite(ledPin, val == HIGH ? LOW : HIGH);
+
+  // 2. Analog read: potentiometer value
+  int sensorValue = analogRead(potPin);
+
+  // 3. Analog write: potentiometer controls PWM brightness
+  analogWrite(PWM_Output, sensorValue / 4);   // 0-1023 -> 0-255
+
+  // Print every 200 ms
+  if (millis() - lastPrint > 200) {
+    lastPrint = millis();
+    Serial.print("Button: ");  Serial.print(val);
+    Serial.print("  Count: "); Serial.print(sensorValue);
+    Serial.print("  Voltage: "); Serial.print(sensorValue * 5.0 / 1023.0);
+    Serial.print("  PWM: ");   Serial.println(sensorValue / 4);
+  }
+}

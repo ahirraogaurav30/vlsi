@@ -1,0 +1,57 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+
+const char* ssid     = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* authUser = "admin";
+const char* authPass = "1234";
+
+#define RELAY_PIN D1
+bool relayState = false;
+ESP8266WebServer server(80);
+
+void applyRelay() {
+  digitalWrite(RELAY_PIN, relayState ? LOW : HIGH);   // active LOW relay board
+}
+
+void handleRoot() {
+  if (!server.authenticate(authUser, authPass)) return server.requestAuthentication();
+  String page = "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>";
+  page += "<title>Home Automation</title></head><body style='text-align:center;font-family:sans-serif'>";
+  page += "<h2>Bulb status: ";
+  page += relayState ? "ON" : "OFF";
+  page += "</h2><a href='/on'><button style='font-size:24px'>ON</button></a> ";
+  page += "<a href='/off'><button style='font-size:24px'>OFF</button></a></body></html>";
+  server.send(200, "text/html", page);
+}
+
+void handleOn() {
+  if (!server.authenticate(authUser, authPass)) return server.requestAuthentication();
+  relayState = true; applyRelay();
+  server.sendHeader("Location", "/"); server.send(303);
+}
+
+void handleOff() {
+  if (!server.authenticate(authUser, authPass)) return server.requestAuthentication();
+  relayState = false; applyRelay();
+  server.sendHeader("Location", "/"); server.send(303);
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(RELAY_PIN, OUTPUT);
+  applyRelay();
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+  Serial.println();
+  Serial.print("Open in browser: http://");
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.on("/on", handleOn);
+  server.on("/off", handleOff);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}

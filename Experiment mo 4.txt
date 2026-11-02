@@ -1,0 +1,65 @@
+int motorFull = 3;      // transistor, full speed
+int motorPWM  = 9;      // transistor, PWM speed (same pin as L298N enable)
+int enable2   = 9;
+int in3 = 10;
+int in4 = 11;
+
+char mode = 'X';
+int spd = 0, stepV = 5;
+bool cw = true;
+unsigned long lastTick = 0;
+
+void stopAll() {
+  digitalWrite(motorFull, LOW);
+  analogWrite(motorPWM, 0);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+  spd = 0; stepV = 5; cw = true;
+}
+
+void setup() {
+  pinMode(motorFull, OUTPUT);
+  pinMode(motorPWM, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+  Serial.begin(9600);
+  Serial.println("A: full speed | B: speed 0-255 | C: L298N | X: stop");
+}
+
+void loop() {
+  if (Serial.available()) {
+    // In mode B, numbers set the speed
+    if (mode == 'B' && (isDigit(Serial.peek()))) {
+      int speed = Serial.parseInt();
+      if (speed >= 0 && speed <= 255) {
+        analogWrite(motorPWM, speed);
+        Serial.print("Speed set to "); Serial.println(speed);
+      }
+    } else {
+      char c = toupper(Serial.read());
+      if (c == 'A' || c == 'B' || c == 'C' || c == 'X') {
+        stopAll();
+        mode = c;
+        if (c == 'A') { digitalWrite(motorFull, HIGH); Serial.println("Full speed"); }
+        if (c == 'B') Serial.println("Type speed 0 to 255");
+        if (c == 'C') { digitalWrite(in3, HIGH); digitalWrite(in4, LOW); Serial.println("L298N ramp"); }
+        if (c == 'X') Serial.println("Stopped");
+      }
+    }
+  }
+
+  // Mode C: L298N ramp up/down, reverse direction each time speed reaches 0
+  if (mode == 'C' && millis() - lastTick > 30) {
+    lastTick = millis();
+    spd += stepV;
+    if (spd >= 255) { spd = 255; stepV = -stepV; }
+    if (spd <= 0) {
+      spd = 0; stepV = abs(stepV);
+      cw = !cw;
+      digitalWrite(in3, cw ? HIGH : LOW);
+      digitalWrite(in4, cw ? LOW : HIGH);
+      Serial.println(cw ? "Clockwise" : "Anti-clockwise");
+    }
+    analogWrite(enable2, spd);
+  }
+}
